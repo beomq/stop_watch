@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 class StopWatchScreen extends StatefulWidget {
@@ -8,8 +10,55 @@ class StopWatchScreen extends StatefulWidget {
 }
 
 class _StopWatchScreenState extends State<StopWatchScreen> {
+  Timer? _timer;
+
+  int _time = 0;
+  bool _isRunning = false;
+  final List<String> _lapTimes = [];
+
+  void _clickButton() {
+    _isRunning = !_isRunning;
+    if (_isRunning) {
+      start();
+    } else {
+      pause();
+    }
+  }
+
+  void start() {
+    _timer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      setState(() {
+        _time++;
+      });
+    });
+  }
+
+  void pause() {
+    _timer?.cancel();
+  }
+
+  void _reset() {
+    _isRunning = false;
+    _timer?.cancel();
+    _lapTimes.clear();
+    _time = 0;
+  }
+
+  void _recordLapTime(String time) {
+    _lapTimes.insert(0, '${_lapTimes.length + 1}등 $time');
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    int sec = _time ~/ 100;
+    String hundredth = '${_time % 100}'.padLeft(2, '0');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('스톱워치'),
@@ -19,36 +68,57 @@ class _StopWatchScreenState extends State<StopWatchScreen> {
           const SizedBox(
             height: 30,
           ),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '0',
-                style: TextStyle(fontSize: 50),
+                '$sec',
+                style: const TextStyle(fontSize: 50),
               ),
               Text(
-                '00',
+                hundredth,
               ),
             ],
+          ),
+          SizedBox(
+            width: 100,
+            height: 100,
+            child: ListView(
+              children: _lapTimes.map((e) => Center(child: Text(e))).toList(),
+            ),
           ),
           const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               FloatingActionButton(
-                backgroundColor: Colors.grey,
-                onPressed: () {},
+                backgroundColor: Colors.brown,
+                onPressed: () {
+                  setState(() {
+                    _reset();
+                  });
+                },
                 child: const Icon(Icons.refresh),
               ),
               FloatingActionButton(
                 backgroundColor: Colors.brown,
-                onPressed: () {},
-                child: const Icon(Icons.play_arrow),
+                onPressed: () {
+                  setState(() {
+                    _clickButton();
+                  });
+                },
+                child: _isRunning
+                    ? const Icon(Icons.pause)
+                    : const Icon(Icons.play_arrow),
               ),
               FloatingActionButton(
-                backgroundColor: Colors.blueGrey,
-                onPressed: () {},
+                backgroundColor: Colors.brown,
+                onPressed: () {
+                  setState(() {
+                    _recordLapTime('$sec.$hundredth');
+                  });
+                },
                 child: const Icon(Icons.add),
               ),
             ],
